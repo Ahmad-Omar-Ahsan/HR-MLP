@@ -8,7 +8,7 @@ data_dir: ./data/Cifar100
 exp:
     wandb: True
     wandb_api_key: 
-    proj_name: fellowship-resnet
+    proj_name: Fellowship
     exp_dir: ./runs
     exp_name: resnet-0.1.0
     device: cuda
