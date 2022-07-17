@@ -6,3 +6,6 @@ __pycache__
 data
 wandb
 runs
+
+#Files
+key.txt
