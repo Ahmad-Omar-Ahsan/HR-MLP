@@ -1,0 +1,52 @@
+######################
+# sample config file
+######################
+
+data_dir: ./data/Cifar100
+
+
+exp:
+    wandb: True
+    wandb_api_key: 
+    proj_name: fellowship-resnet
+    exp_dir: ./runs
+    exp_name: resnet-0.1.0
+    device: cuda
+    log_freq: 20  # steps
+    log_to_file: False
+    log_to_stdout: True
+    val_freq: 1   # epochs
+    n_workers: 1
+    pin_memory: True
+    cache: 2     
+entity: saitomar
+
+hparams:
+    restore_ckpt:
+    seed: 0
+    batch_size: 16
+    start_epoch: 0
+    n_epochs: 140
+    l_smooth: 0.1
+    device: cuda
+
+    
+    model:
+        type: ResNet
+        layers : [3, 4, 6, 3]
+        image_channels : 3
+        num_classes: 100
+
+    optimizer:
+        opt_type: adamw
+        opt_kwargs:
+          lr: 0.001
+          weight_decay: 0.05
+    
+    scheduler:
+        n_warmup: 10
+        max_epochs: 140
+        scheduler_type: cosine_annealing
+
+    augment: False
+       
