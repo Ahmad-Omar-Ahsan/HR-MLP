@@ -85,6 +85,7 @@ def get_model(model_config: dict) -> nn.Module:
     """
     
     if model_config["type"] == "ResNet":
+        del model_config['type']
         return ResNet(**model_config)
     elif model_config["type"] == "Inception":
         return GoogLeNet(aux_logits=model_config['aux_logits'],num_classes=model_config['num_classes'])
