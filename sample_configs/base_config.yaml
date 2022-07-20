@@ -29,6 +29,7 @@ hparams:
     n_epochs: 140
     l_smooth: 0.1
     device: cuda
+    num_classes: 100
 
     
     model:

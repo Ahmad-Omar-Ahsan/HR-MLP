@@ -70,7 +70,7 @@ def training_pipeline(config):
     # loss
     if config["hparams"]["l_smooth"]:
         criterion = LabelSmoothingLoss(
-            num_classes=config["hparams"]["model"]["num_classes"],
+            num_classes=config["hparams"]["num_classes"],
             smoothing=config["hparams"]["l_smooth"],
         )
     else:
