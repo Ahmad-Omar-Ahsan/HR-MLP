@@ -32,10 +32,14 @@ hparams:
 
     
     model:
-        type: ResNet
-        layers : [3, 4, 6, 3]
-        image_channels : 3
-        num_classes: 100
+        type : ResNet
+        ResNet:
+            layers : [3, 4, 6, 3]
+            image_channels : 3
+            num_classes: 100
+        Inception:
+            aux_logits: True
+            num_classes: 100
 
     optimizer:
         opt_type: adamw
@@ -44,7 +48,7 @@ hparams:
           weight_decay: 0.05
     
     scheduler:
-        n_warmup: 10
+        n_warmup: 40
         max_epochs: 140
         scheduler_type: cosine_annealing
 

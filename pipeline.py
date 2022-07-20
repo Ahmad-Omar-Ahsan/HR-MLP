@@ -49,6 +49,7 @@ def training_pipeline(config):
 
     trainloader, valloader = get_train_valid_loader_CIFAR100(
         data_dir=config["data_dir"],
+        random_seed=config['hparams']['seed'],
         batch_size=config["hparams"]["batch_size"],
         augment=config["hparams"]["augment"],
         num_workers=config["exp"]["n_workers"],

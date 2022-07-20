@@ -10,6 +10,7 @@ def get_train_valid_loader_CIFAR100(
     data_dir,
     batch_size,
     augment,
+    random_seed,
     valid_size=0.1,
     shuffle=True,
     num_workers=4,
@@ -52,8 +53,9 @@ def get_train_valid_loader_CIFAR100(
     ])
     if augment:
         train_transform = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
+            # transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(15),
             transforms.ToTensor(),
             normalize,
         ])
@@ -83,7 +85,7 @@ def get_train_valid_loader_CIFAR100(
     split = int(np.floor(valid_size * num_train))
 
     if shuffle:
-        #np.random.seed(random_seed)
+        np.random.seed(random_seed)
         np.random.shuffle(indices)
 
     train_idx, valid_idx = indices[split:], indices[:split]
