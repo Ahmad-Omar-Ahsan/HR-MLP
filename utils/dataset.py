@@ -151,7 +151,7 @@ def get_test_loader(data_dir,
         normalize,
     ])
 
-    dataset = datasets.CIFAR10(
+    dataset = datasets.CIFAR100(
         root=data_dir, train=False,
         download=True, transform=transform,
     )
