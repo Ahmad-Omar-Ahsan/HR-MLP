@@ -1,6 +1,9 @@
 # Misc
 __pycache__
 .ipynb_checkpoints
+.vscode
+test_gy.ipynb
+test.py
 
 # Folders
 data

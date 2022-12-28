@@ -1,5 +1,23 @@
 # Fellowship-EDA
 Experiments for Fatima Fellowship 22
 
-## First run
- - [ ] Run Inception Net and ResNet on Cifar100 to find hard classes 
+## Setup environment
+```
+pip install -qr requirements.txt
+```
+## Set pythonpath
+```
+# From main dir
+export PYTHONPATH="$PWD"
+```
+## Config file
+Change hyperparameters in `sample_configs/base_config.yaml`
+
+## Training
+
+```
+python3 pipeline.py --conf `path to config file`
+```
+
+
+

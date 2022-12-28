@@ -145,4 +145,3 @@ class conv_block(nn.Module):
 
     def forward(self, x):
         return self.relu(self.batchnorm(self.conv(x)))
-    

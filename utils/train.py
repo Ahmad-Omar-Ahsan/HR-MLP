@@ -1,11 +1,13 @@
-import torch
-from torch import nn, optim
-from typing import Callable, Tuple
-from torch.utils.data import DataLoader
-from utils.misc import log, save_model
 import os
 import time
+from typing import Callable, Tuple
+
+import torch
+from torch import nn, optim
+from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from utils.misc import log, save_model
 
 
 def train_single_batch(
@@ -124,7 +126,10 @@ def train(
             ):
                 schedulers["warmup"].step()
 
-            elif schedulers["scheduler"] is not None:
+            elif schedulers["scheduler"] is not None and config["hparams"]["scheduler"]['scheduler_type']=='cosine_annealing':
+                if epoch >= config["hparams"]["scheduler"]['cosine_annealing']["start_epoch"]:
+                    schedulers["scheduler"].step()
+            elif schedulers["scheduler"] is not None and config["hparams"]["scheduler"]['scheduler_type']=='one_cycle_lr':
                 schedulers["scheduler"].step()
 
             running_loss += loss

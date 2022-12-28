@@ -1,6 +1,14 @@
 numpy==1.21.5
 opencv_contrib_python==4.5.5.62
 PyYAML==6.0
-torch==1.11.0
+torch
 torchvision
 tqdm==4.56.0
+einops
+geoopt
+torch-geometric
+torch-sparse
+torch-scatter
+imageio
+timm
+wandb
