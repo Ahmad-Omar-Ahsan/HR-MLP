@@ -13,11 +13,10 @@ class LRScheduler(_LRScheduler):
         # Check if using mixed precision training
         self.mixed_training = False
         base_optimizer = optimizer
- 
+
         # Check that optimizer param is valid
         if not isinstance(optimizer, Optimizer):
-            raise TypeError('{} is not an Optimizer'.format(
-                type(optimizer).__name__))
+            raise TypeError("{} is not an Optimizer".format(type(optimizer).__name__))
 
         super(LRScheduler, self).__init__(base_optimizer, last_epoch)
 
@@ -26,22 +25,28 @@ class LRScheduler(_LRScheduler):
         # ('epoch' is used to be consistent with _LRScheduler)
         if self.mixed_training:
             # The assumption is that the step will be constant
-            state_dict = self.optimizer.state[self.optimizer.param_groups[0]['params'][0]]
-            if 'step' in state_dict:
-                self.last_epoch = state_dict['step'] + 1
+            state_dict = self.optimizer.state[
+                self.optimizer.param_groups[0]["params"][0]
+            ]
+            if "step" in state_dict:
+                self.last_epoch = state_dict["step"] + 1
             else:
                 self.last_epoch = 1
         else:
             self.last_epoch = epoch if epoch is not None else self.last_epoch + 1
 
         for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
-            param_group['lr'] = lr
+            param_group["lr"] = lr
 
 
 def format_metrics(metrics, split):
     """Format metric in metric dict for logging."""
     return " ".join(
-            ["{}_{}: {:.4f}".format(split, metric_name, metric_val) for metric_name, metric_val in metrics.items()])
+        [
+            "{}_{}: {:.4f}".format(split, metric_name, metric_val)
+            for metric_name, metric_val in metrics.items()
+        ]
+    )
 
 
 def get_dir_name(models_dir):
@@ -58,15 +63,15 @@ def get_dir_name(models_dir):
         The name of a new directory to save the training logs and model weights.
     """
     if not os.path.exists(models_dir):
-        save_dir = os.path.join(models_dir, '0')
+        save_dir = os.path.join(models_dir, "0")
         os.makedirs(save_dir)
     else:
         existing_dirs = np.array(
-                [
-                    d
-                    for d in os.listdir(models_dir)
-                    if os.path.isdir(os.path.join(models_dir, d))
-                    ]
+            [
+                d
+                for d in os.listdir(models_dir)
+                if os.path.isdir(os.path.join(models_dir, d))
+            ]
         ).astype(np.int)
         if len(existing_dirs) > 0:
             dir_id = str(existing_dirs.max() + 1)
@@ -105,18 +110,25 @@ def add_flags_from_config(parser, config_dict):
                 if len(default) > 0:
                     # pass a list as argument
                     parser.add_argument(
-                            f"--{param}",
-                            action="append",
-                            type=type(default[0]),
-                            default=default,
-                            help=description
+                        f"--{param}",
+                        action="append",
+                        type=type(default[0]),
+                        default=default,
+                        help=description,
                     )
                 else:
                     pass
-                    parser.add_argument(f"--{param}", action="append", default=default, help=description)
+                    parser.add_argument(
+                        f"--{param}", action="append", default=default, help=description
+                    )
             else:
                 pass
-                parser.add_argument(f"--{param}", type=OrNone(default), default=default, help=description)
+                parser.add_argument(
+                    f"--{param}",
+                    type=OrNone(default),
+                    default=default,
+                    help=description,
+                )
         except argparse.ArgumentError:
             print(
                 f"Could not add flag for param {param} because it was already present."
@@ -137,12 +149,12 @@ class PolyWarmUpSchedulerCorrect(LRScheduler):
 
     def step(self, epoch=None):
         param_group = self.optimizer.param_groups[0]
-        if 'step' in param_group:
-            self.last_epoch = param_group['step'] + 1
+        if "step" in param_group:
+            self.last_epoch = param_group["step"] + 1
         else:
             self.last_epoch = 1
         for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
-            param_group['lr'] = lr
+            param_group["lr"] = lr
 
     def get_lr(self):
         progress = self.last_epoch / self.total_steps
@@ -151,4 +163,6 @@ class PolyWarmUpSchedulerCorrect(LRScheduler):
         else:
             warmup = self.warmup * self.total_steps
             progress = (self.last_epoch - warmup) / (self.total_steps - warmup)
-            return [base_lr * ((1.0 - progress) ** self.degree) for base_lr in self.base_lrs]
+            return [
+                base_lr * ((1.0 - progress) ** self.degree) for base_lr in self.base_lrs
+            ]

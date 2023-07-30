@@ -37,8 +37,8 @@ class Artanh(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        input, = ctx.saved_tensors
-        return grad_output / (1 - input ** 2)
+        (input,) = ctx.saved_tensors
+        return grad_output / (1 - input**2)
 
 
 class Arsinh(torch.autograd.Function):
@@ -50,8 +50,8 @@ class Arsinh(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        input, = ctx.saved_tensors
-        return grad_output / (1 + input ** 2) ** 0.5
+        (input,) = ctx.saved_tensors
+        return grad_output / (1 + input**2) ** 0.5
 
 
 class Arcosh(torch.autograd.Function):
@@ -64,6 +64,5 @@ class Arcosh(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        input, = ctx.saved_tensors
-        return grad_output / (input ** 2 - 1) ** 0.5
-
+        (input,) = ctx.saved_tensors
+        return grad_output / (input**2 - 1) ** 0.5

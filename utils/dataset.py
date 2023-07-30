@@ -1,21 +1,32 @@
 import logging
 import math
 import os
+import random
 
 import numpy as np
 import torch
 import torch.utils.data as data
-from timm.data.auto_augment import (augment_and_mix_transform,
-                                    auto_augment_transform,
-                                    rand_augment_transform)
-from timm.data.constants import (DEFAULT_CROP_PCT, IMAGENET_DEFAULT_MEAN,
-                                 IMAGENET_DEFAULT_STD)
+from timm.data.auto_augment import (
+    augment_and_mix_transform,
+    auto_augment_transform,
+    rand_augment_transform,
+)
+from timm.data.constants import (
+    DEFAULT_CROP_PCT,
+    IMAGENET_DEFAULT_MEAN,
+    IMAGENET_DEFAULT_STD,
+)
 from timm.data.random_erasing import RandomErasing
-from timm.data.transforms import (RandomResizedCropAndInterpolation, ToNumpy,
-                                  str_to_interp_mode, str_to_pil_interp)
+from timm.data.transforms import (
+    RandomResizedCropAndInterpolation,
+    ToNumpy,
+    str_to_interp_mode,
+    str_to_pil_interp,
+)
 from torch.utils.data.sampler import SubsetRandomSampler
-from torchvision import transforms
-from torchvision.datasets import CIFAR10,CIFAR100
+from torchvision import transforms, datasets
+from torchvision.datasets import CIFAR10, CIFAR100
+from torch.utils.data import DataLoader, sampler, random_split
 
 _logger = logging.getLogger(__name__)
 _ERROR_RETRY = 50
@@ -257,7 +268,6 @@ def create_transform(
     return transform
 
 
-
 def get_train_valid_loader_CIFAR10(
     data_dir,
     batch_size,
@@ -269,7 +279,7 @@ def get_train_valid_loader_CIFAR10(
     num_workers=4,
     pin_memory=False,
     show_sample=True,
-    augment = True
+    augment=True,
 ):
     """
     Utility function for loading and returning train and valid
@@ -306,18 +316,21 @@ def get_train_valid_loader_CIFAR10(
         )
     else:
         normalize = transforms.Normalize(
-        mean=CIFAR10_DEFAULT_MEAN,
-        std=CIFAR10_DEFAULT_STD,
-    )
-        train_transform = transforms.Compose([
-            transforms.ToTensor(),
-            normalize,
-        ])
-        valid_transform = transforms.Compose([
-            transforms.ToTensor(),
-            normalize,
-        ])
-
+            mean=CIFAR10_DEFAULT_MEAN,
+            std=CIFAR10_DEFAULT_STD,
+        )
+        train_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                normalize,
+            ]
+        )
+        valid_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                normalize,
+            ]
+        )
 
     # load the dataset
     train_dataset = CIFAR10(
@@ -362,22 +375,22 @@ def get_train_valid_loader_CIFAR10(
     )
     if show_sample:
         sample_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=9, shuffle=shuffle,
-            num_workers=num_workers, pin_memory=pin_memory,
+            train_dataset,
+            batch_size=9,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
         )
         data_iter = iter(sample_loader)
-        images, labels = data_iter.next()
+        images, labels = next(data_iter)
         X = images.numpy().transpose([0, 2, 3, 1])
-       
 
     return (train_loader, valid_loader)
 
 
-def get_test_loader(data_dir,
-                    batch_size,
-                    shuffle=True,
-                    num_workers=2,
-                    pin_memory=False):
+def get_test_loader(
+    data_dir, batch_size, shuffle=True, num_workers=2, pin_memory=False
+):
     """
     Utility function for loading and returning a multi-process
     test iterator over the CIFAR-10 dataset.
@@ -400,23 +413,29 @@ def get_test_loader(data_dir,
     )
 
     # define transform
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize,
-    ])
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            normalize,
+        ]
+    )
 
     dataset = CIFAR10(
-        root=data_dir, train=False,
-        download=True, transform=transform,
+        root=data_dir,
+        train=False,
+        download=True,
+        transform=transform,
     )
 
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=shuffle,
-        num_workers=num_workers, pin_memory=pin_memory,
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
     )
 
     return data_loader
-
 
 
 def get_train_valid_loader_CIFAR100(
@@ -430,7 +449,7 @@ def get_train_valid_loader_CIFAR100(
     num_workers=4,
     pin_memory=False,
     show_sample=True,
-    augment=True
+    augment=True,
 ):
     """
     Utility function for loading and returning train and valid
@@ -456,7 +475,6 @@ def get_train_valid_loader_CIFAR100(
     error_msg = "[!] valid_size should be in the range [0, 1]."
     assert (valid_size >= 0) and (valid_size <= 1), error_msg
 
-    
     if augment == True:
         train_transform = create_transform(
             input_size=train_transform_config["input_size"],
@@ -468,17 +486,21 @@ def get_train_valid_loader_CIFAR100(
         )
     else:
         normalize = transforms.Normalize(
-        mean=CIFAR100_DEFAULT_MEAN,
-        std=CIFAR100_DEFAULT_STD,
-    )
-        train_transform = transforms.Compose([
-            transforms.ToTensor(),
-            normalize,
-        ])
-        valid_transform = transforms.Compose([
-            transforms.ToTensor(),
-            normalize,
-        ])
+            mean=CIFAR100_DEFAULT_MEAN,
+            std=CIFAR100_DEFAULT_STD,
+        )
+        train_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                normalize,
+            ]
+        )
+        valid_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                normalize,
+            ]
+        )
     # load the dataset
     train_dataset = CIFAR100(
         root=data_dir,
@@ -522,22 +544,22 @@ def get_train_valid_loader_CIFAR100(
     )
     if show_sample:
         sample_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=9, shuffle=shuffle,
-            num_workers=num_workers, pin_memory=pin_memory,
+            train_dataset,
+            batch_size=9,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
         )
         data_iter = iter(sample_loader)
-        images, labels = data_iter.next()
+        images, labels = next(data_iter)
         X = images.numpy().transpose([0, 2, 3, 1])
-       
 
     return (train_loader, valid_loader)
 
 
-def get_test_loader_CIFAR100(data_dir,
-                    batch_size,
-                    shuffle=True,
-                    num_workers=2,
-                    pin_memory=False):
+def get_test_loader_CIFAR100(
+    data_dir, batch_size, shuffle=True, num_workers=2, pin_memory=False
+):
     """
     Utility function for loading and returning a multi-process
     test iterator over the CIFAR-10 dataset.
@@ -560,19 +582,172 @@ def get_test_loader_CIFAR100(data_dir,
     )
 
     # define transform
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize,
-    ])
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            normalize,
+        ]
+    )
 
     dataset = CIFAR100(
-        root=data_dir, train=False,
-        download=True, transform=transform,
+        root=data_dir,
+        train=False,
+        download=True,
+        transform=transform,
     )
 
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=shuffle,
-        num_workers=num_workers, pin_memory=pin_memory,
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
     )
 
     return data_loader
+
+
+def get_CUB_data_loaders(data_dir, batch_size, train=False, num_workers=2):
+    if train:
+        transform = transforms.Compose(
+            [
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomVerticalFlip(p=0.5),
+                transforms.RandomApply(
+                    torch.nn.ModuleList([transforms.ColorJitter()]), p=0.1
+                ),
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+                #             transforms.RandomErasing(p=0.25, value='random')
+            ]
+        )
+        all_data = datasets.ImageFolder(data_dir, transform=transform)
+        train_data_len = int(len(all_data) * 0.75)
+        valid_data_len = int((len(all_data) - train_data_len) / 2)
+        test_data_len = int(len(all_data) - train_data_len - valid_data_len)
+        train_data, val_data, test_data = random_split(
+            all_data, [train_data_len, valid_data_len, test_data_len]
+        )
+        train_loader = DataLoader(
+            train_data, batch_size=batch_size, shuffle=True, num_workers=num_workers
+        )
+        return train_loader
+
+    else:
+        transform = transforms.Compose(
+            [
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+            ]
+        )
+        all_data = datasets.ImageFolder(data_dir, transform=transform)
+        train_data_len = int(len(all_data) * 0.70)
+        valid_data_len = int((len(all_data) - train_data_len) / 2)
+        test_data_len = int(len(all_data) - train_data_len - valid_data_len)
+        train_data, val_data, test_data = random_split(
+            all_data, [train_data_len, valid_data_len, test_data_len]
+        )
+        val_loader = DataLoader(
+            val_data, batch_size=batch_size, shuffle=True, num_workers=num_workers
+        )
+        test_loader = DataLoader(
+            test_data, batch_size=batch_size, shuffle=True, num_workers=num_workers
+        )
+        return (val_loader, test_loader)
+
+
+def split_dataset(dataset, train_ratio, val_ratio):
+    total_samples = len(dataset)
+    train_size = int(train_ratio * total_samples)
+    val_size = int(val_ratio * total_samples)
+    test_size = total_samples - train_size - val_size
+
+    # Get a list of unique class labels
+    classes = dataset.class_to_idx
+    num_classes = len(classes)
+    class_samples = {v: [] for _, v in classes.items()}
+
+    # Group samples by class
+    for i in range(total_samples):
+        class_samples[dataset[i][1]].append(i)
+
+    # Shuffle the samples in each class
+    for _, v in classes.items():
+        random.shuffle(class_samples[v])
+
+    # Split indices for each set
+    train_indices = []
+    val_indices = []
+    test_indices = []
+
+    for _, v in classes.items():
+        class_total_samples = len(class_samples[v])
+        train_count = int(train_ratio * class_total_samples)
+        val_count = int(val_ratio * class_total_samples)
+
+        train_indices.extend(class_samples[v][:train_count])
+        val_indices.extend(class_samples[v][train_count : train_count + val_count])
+        test_indices.extend(class_samples[v][train_count + val_count :])
+
+    # Create data loaders for each set
+    train_dataset = torch.utils.data.Subset(dataset, train_indices)
+    val_dataset = torch.utils.data.Subset(dataset, val_indices)
+    test_dataset = torch.utils.data.Subset(dataset, test_indices)
+
+    return train_dataset, val_dataset, test_dataset
+
+
+def get_miniImageNet_dataloaders(data_dir: str, batch_size: int, augment: bool = True):
+    if augment:
+        transform = transforms.Compose(
+            [
+                transforms.Resize((64, 64)),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD
+                ),
+            ]
+        )
+    else:
+        transform = transforms.Compose(
+            [
+                transforms.Resize((64, 64)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD
+                ),
+            ]
+        )
+
+    test_transform = transforms.Compose(
+        [
+            transforms.Resize((64, 64)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD),
+        ]
+    )
+    dataset = datasets.ImageFolder(root=data_dir)
+    train_dataset, val_dataset, test_dataset = split_dataset(
+        dataset=dataset, train_ratio=0.8, val_ratio=0.1
+    )
+
+    train_dataset.dataset.transform = transform
+    val_dataset.dataset.transform = test_transform
+    test_dataset.dataset.transform = test_transform
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True
+    )
+
+    # For the validation dataset, use the val_test_transform (without augmentation)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
+
+    # For the test dataset, also use the val_test_transform (without augmentation)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
+
+    return train_loader, val_loader, test_loader

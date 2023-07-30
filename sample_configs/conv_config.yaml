@@ -1,0 +1,52 @@
+data_dir: /home/wepeng/hyperbolic_vision/miniImageNet
+
+
+
+exp:
+    wandb: True
+    wandb_api_key: 
+    proj_name: H-resmlp
+    exp_dir: ./runs
+    exp_name: conv_final-miniImageNet-0.1
+    device: cuda:1
+    log_freq: 20  # steps
+    log_to_file: False
+    log_to_stdout: True
+    val_freq: 1   # epochs
+    n_workers: 1
+    pin_memory: True
+    cache: 2     
+entity: saitomar
+
+hparams:
+    restore_ckpt:
+    freeze_weights: 
+    seed: 0
+    batch_size: 256
+    start_epoch: 0
+    n_epochs: 150
+    l_smooth: 0.1
+    device: cuda:1
+    num_classes: 100
+    dataset: miniImageNet
+    augment: False
+
+    
+    model:
+        type : simple_cnn
+        simple_cnn:
+            num_classes: 100
+          
+
+    optimizer:
+        opt_type: adamw
+        opt_kwargs:
+          lr: 0.005
+          weight_decay: 0.05
+    
+    scheduler:
+        n_warmup: 20
+        max_epochs: 150
+        scheduler_type: cosine_annealing
+        cosine_annealing:
+          start_epoch: 40

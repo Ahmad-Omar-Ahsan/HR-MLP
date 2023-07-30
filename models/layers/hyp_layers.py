@@ -22,7 +22,7 @@ def get_dim_act_curv(args):
         act = getattr(F, args.act)
     acts = [act] * (args.num_layers - 1)
     dims = [args.feat_dim] + ([args.dim] * (args.num_layers - 1))
-    if args.task in ['lp', 'rec']:
+    if args.task in ["lp", "rec"]:
         dims += [args.dim]
         acts += [act]
         n_curvatures = args.num_layers
@@ -30,7 +30,7 @@ def get_dim_act_curv(args):
         n_curvatures = args.num_layers - 1
     if args.c is None:
         # create list of trainable curvature parameters
-        curvatures = [nn.Parameter(torch.Tensor([1.])) for _ in range(n_curvatures)]
+        curvatures = [nn.Parameter(torch.Tensor([1.0])) for _ in range(n_curvatures)]
     else:
         # fixed curvature
         curvatures = [torch.tensor([args.c]) for _ in range(n_curvatures)]
@@ -46,7 +46,9 @@ class HNNLayer(nn.Module):
 
     def __init__(self, manifold, in_features, out_features, c, dropout, act, use_bias):
         super(HNNLayer, self).__init__()
-        self.linear = HypLinear(manifold, in_features, out_features, c, dropout, use_bias, scale=10)
+        self.linear = HypLinear(
+            manifold, in_features, out_features, c, dropout, use_bias, scale=10
+        )
         self.hyp_act = HypAct(manifold, c, c, act)
 
     def forward(self, x):
@@ -60,9 +62,21 @@ class LorentzGraphConvolution(nn.Module):
     Hyperbolic graph convolution layer.
     """
 
-    def __init__(self, manifold, in_features, out_features, use_bias, dropout, use_att, local_agg, nonlin=None):
+    def __init__(
+        self,
+        manifold,
+        in_features,
+        out_features,
+        use_bias,
+        dropout,
+        use_att,
+        local_agg,
+        nonlin=None,
+    ):
         super(LorentzGraphConvolution, self).__init__()
-        self.linear = LorentzLinear(manifold, in_features, out_features, use_bias, dropout, nonlin=nonlin)
+        self.linear = LorentzLinear(
+            manifold, in_features, out_features, use_bias, dropout, nonlin=nonlin
+        )
         self.agg = LorentzAgg(manifold, out_features, dropout, use_att, local_agg)
         # self.hyp_act = HypAct(manifold, c_in, c_out, act)
 
@@ -76,42 +90,44 @@ class LorentzGraphConvolution(nn.Module):
 
 
 class LorentzLinear(nn.Module):
-    def __init__(self,
-                 manifold,
-                 in_features,
-                 out_features,
-                 bias=True,
-                 dropout=0.1,
-                 scale=10,
-                 fixscale=False,
-                 nonlin=None):
+    def __init__(
+        self,
+        manifold,
+        in_features,
+        out_features,
+        bias=True,
+        dropout=0.1,
+        scale=10,
+        fixscale=False,
+        nonlin=None,
+    ):
         super().__init__()
         self.manifold = manifold
         self.nonlin = nonlin
         self.in_features = in_features
         self.out_features = out_features
         self.bias = bias
-        self.weight = nn.Linear(
-            self.in_features, self.out_features, bias=bias)
+        self.weight = nn.Linear(self.in_features, self.out_features, bias=bias)
         self.reset_parameters()
         self.dropout = nn.Dropout(dropout)
-        self.scale = nn.Parameter(torch.ones(()) * math.log(scale), requires_grad=not fixscale)
+        self.scale = nn.Parameter(
+            torch.ones(()) * math.log(scale), requires_grad=not fixscale
+        )
 
-    def forward(self, x, bias=False):
+    def forward(self, x):
         if self.nonlin is not None:
             x = self.nonlin(x)
-        if bias is not None:
-            x = x + self.bias
         x = self.weight(self.dropout(x))
         x_narrow = x.narrow(-1, 1, x.shape[-1] - 1)
         time = x.narrow(-1, 0, 1).sigmoid() * self.scale.exp() + 1.1
-        scale = (time * time - 1) / \
-            (x_narrow * x_narrow).sum(dim=-1, keepdim=True).clamp_min(1e-8)
+        scale = (time * time - 1) / (x_narrow * x_narrow).sum(
+            dim=-1, keepdim=True
+        ).clamp_min(1e-8)
         x = torch.cat([time, x_narrow * scale.sqrt()], dim=-1)
         return x
 
     def reset_parameters(self):
-        stdv = 1. / math.sqrt(self.out_features)
+        stdv = 1.0 / math.sqrt(self.out_features)
         step = self.in_features
         nn.init.uniform_(self.weight.weight, -stdv, stdv)
         with torch.no_grad():
@@ -169,7 +185,7 @@ class LorentzAgg(Module):
         else:
             support_t = torch.spmm(adj, x)
         # output = self.manifold.expmap0(support_t, c=self.c)
-        denom = (-self.manifold.inner(None, support_t, keepdim=True))
+        denom = -self.manifold.inner(None, support_t, keepdim=True)
         denom = denom.abs().clamp_min(1e-8).sqrt()
         output = support_t / denom
         return output
@@ -183,9 +199,23 @@ class HyperbolicGraphConvolution(nn.Module):
     Hyperbolic graph convolution layer.
     """
 
-    def __init__(self, manifold, in_features, out_features, c_in, c_out, dropout, act, use_bias, use_att, local_agg):
+    def __init__(
+        self,
+        manifold,
+        in_features,
+        out_features,
+        c_in,
+        c_out,
+        dropout,
+        act,
+        use_bias,
+        use_att,
+        local_agg,
+    ):
         super(HyperbolicGraphConvolution, self).__init__()
-        self.linear = HypLinear(manifold, in_features, out_features, c_in, dropout, use_bias)
+        self.linear = HypLinear(
+            manifold, in_features, out_features, c_in, dropout, use_bias
+        )
         self.agg = HypAgg(manifold, c_in, out_features, dropout, use_att, local_agg)
         self.hyp_act = HypAct(manifold, c_in, c_out, act)
 
@@ -232,7 +262,7 @@ class HypLinear(nn.Module):
         return res
 
     def extra_repr(self):
-        return 'in_features={}, out_features={}, c={}'.format(
+        return "in_features={}, out_features={}, c={}".format(
             self.in_features, self.out_features, self.c
         )
 
@@ -265,18 +295,22 @@ class HypAgg(Module):
                 adj_att = self.att(x_tangent, adj)
                 att_rep = adj_att.unsqueeze(-1) * x_local_tangent
                 support_t = torch.sum(adj_att.unsqueeze(-1) * x_local_tangent, dim=1)
-                output = self.manifold.proj(self.manifold.expmap(x, support_t, c=self.c), c=self.c)
+                output = self.manifold.proj(
+                    self.manifold.expmap(x, support_t, c=self.c), c=self.c
+                )
                 return output
             else:
                 adj_att = self.att(x_tangent, adj)
                 support_t = torch.matmul(adj_att, x_tangent)
         else:
             support_t = torch.spmm(adj, x_tangent)
-        output = self.manifold.proj(self.manifold.expmap0(support_t, c=self.c), c=self.c)
+        output = self.manifold.proj(
+            self.manifold.expmap0(support_t, c=self.c), c=self.c
+        )
         return output
 
     def extra_repr(self):
-        return 'c={}'.format(self.c)
+        return "c={}".format(self.c)
 
 
 class HypAct(Module):
@@ -297,6 +331,4 @@ class HypAct(Module):
         return self.manifold.proj(self.manifold.expmap0(xt, c=self.c_out), c=self.c_out)
 
     def extra_repr(self):
-        return 'c_in={}, c_out={}'.format(
-            self.c_in, self.c_out
-        )
+        return "c_in={}, c_out={}".format(self.c_in, self.c_out)

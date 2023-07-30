@@ -12,28 +12,30 @@ from models.manifolds.lorentz import Lorentz
 import models.manifolds as manifolds
 
 
-
 class LorentzLinear(nn.Module):
-    def __init__(self,
-                 manifold,
-                 in_features,
-                 out_features,
-                 bias=True,
-                 dropout=0.1,
-                 scale=10,
-                 fixscale=False,
-                 nonlin=None):
+    def __init__(
+        self,
+        manifold,
+        in_features,
+        out_features,
+        bias=True,
+        dropout=0.1,
+        scale=10,
+        fixscale=False,
+        nonlin=None,
+    ):
         super().__init__()
         self.manifold = manifold
         self.nonlin = nonlin
         self.in_features = in_features
         self.out_features = out_features
         self.bias = bias
-        self.weight = nn.Linear(
-            self.in_features, self.out_features, bias=bias)
+        self.weight = nn.Linear(self.in_features, self.out_features, bias=bias)
         self.reset_parameters()
         self.dropout = nn.Dropout(dropout)
-        self.scale = nn.Parameter(torch.ones(()) * math.log(scale), requires_grad=not fixscale)
+        self.scale = nn.Parameter(
+            torch.ones(()) * math.log(scale), requires_grad=not fixscale
+        )
 
     def forward(self, x):
         if self.nonlin is not None:
@@ -41,11 +43,12 @@ class LorentzLinear(nn.Module):
         x = self.weight(self.dropout(x))
         x_narrow = x.narrow(-1, 1, x.shape[-1] - 1)
         time = x.narrow(-1, 0, 1).sigmoid() * self.scale.exp() + 1.1
-        scale = (time * time - 1) / \
-            (x_narrow * x_narrow).sum(dim=-1, keepdim=True).clamp_min(1e-8)
+        scale = (time * time - 1) / (x_narrow * x_narrow).sum(
+            dim=-1, keepdim=True
+        ).clamp_min(1e-8)
         x = torch.cat([time, x_narrow * scale.sqrt()], dim=-1)
         return x
-    
+
 
 def DropPath(x, drop_prob: float = 0.0, training: bool = False):
     if drop_prob == 0.0 or not training:
@@ -56,8 +59,6 @@ def DropPath(x, drop_prob: float = 0.0, training: bool = False):
     random_tensor.floor_()  # binarize
     output = x.div(keep_prob) * random_tensor
     return output
-
-
 
 
 class FFN_Lorentz(nn.Module):
@@ -556,7 +557,7 @@ class Isotropic_VIG_lorentz_complete(nn.Module):
         x = F.adaptive_avg_pool2d(x, 1)
         print(x.shape)
         x = x.squeeze(-1).squeeze(-1)
-        
+
         x = self.lorentz_mlp_head(x)
 
         return x
@@ -577,7 +578,7 @@ if __name__ == "__main__":
         dropout=0.0,
         n_classes=5,
         image_resolution=[32, 32],
-        manifold="Lorentz"
+        manifold="Lorentz",
     )
     image_tensor = torch.randn((3, 3, 32, 32))
     output_tensor = iso_vig(image_tensor)

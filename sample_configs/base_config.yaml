@@ -6,11 +6,11 @@ data_dir: ./data/Cifar100
 
 
 exp:
-    wandb: True
+    wandb: False
     wandb_api_key: 
     proj_name: Fellowship
     exp_dir: ./runs
-    exp_name: resnet-0.1.0
+    exp_name: test
     device: cuda
     log_freq: 20  # steps
     log_to_file: False
@@ -18,40 +18,58 @@ exp:
     val_freq: 1   # epochs
     n_workers: 1
     pin_memory: True
-    cache: 2     
+    cache: 2
+    dataset: CIFAR10
+    augment: False     
 entity: saitomar
 
 hparams:
     restore_ckpt:
     seed: 0
-    batch_size: 16
+    batch_size: 8
     start_epoch: 0
-    n_epochs: 140
+    n_epochs: 2
     l_smooth: 0.1
-    device: cuda
-    num_classes: 100
+    device: auto
+    num_classes: 10
+    train_transform:
+        input_size : [32,32]
+        is_training : True
+    
+    val_transform:
+        input_size : [32,32]
+        is_training : False
 
     
     model:
-        type : ResNet
-        ResNet:
-            layers : [3, 4, 6, 3]
-            image_channels : 3
-            num_classes: 100
-        Inception:
-            aux_logits: True
-            num_classes: 100
+        type : lorentz_complete
+        lorentz_complete:
+            k : 9
+            act : gelu
+            conv : lmr 
+            drop_path : 0.0
+            blocks : 16
+            channels : 320
+            dropout : 0.0 
+            n_classes : 10
+            image_resolution : [32,32]
+            manifold : Lorentz
+        
+
 
     optimizer:
         opt_type: adamw
         opt_kwargs:
           lr: 0.001
-          weight_decay: 0.05
+          stabilize: 0.05 
     
     scheduler:
-        n_warmup: 40
-        max_epochs: 140
-        scheduler_type: cosine_annealing
+        
+        max_epochs: 2
+        scheduler_type: one_cycle_lr
+        one_cycle_lr:
+            max_lr: 3.0
+            
 
     augment: False
        

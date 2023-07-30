@@ -12,7 +12,7 @@ class DenseAtt(nn.Module):
         self.linear = nn.Linear(2 * in_features, 1, bias=True)
         self.in_features = in_features
 
-    def forward (self, x, adj):
+    def forward(self, x, adj):
         n = x.size(0)
         # n x 1 x d
         x_left = torch.unsqueeze(x, 1)
@@ -114,23 +114,37 @@ class SpGraphAttentionLayer(nn.Module):
         return self.act(h_prime)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
+        return (
+            self.__class__.__name__
+            + " ("
+            + str(self.in_features)
+            + " -> "
+            + str(self.out_features)
+            + ")"
+        )
 
 
 class GraphAttentionLayer(nn.Module):
-    def __init__(self, input_dim, output_dim, dropout, activation, alpha, nheads, concat):
+    def __init__(
+        self, input_dim, output_dim, dropout, activation, alpha, nheads, concat
+    ):
         """Sparse version of GAT."""
         super(GraphAttentionLayer, self).__init__()
         self.dropout = dropout
         self.output_dim = output_dim
-        self.attentions = [SpGraphAttentionLayer(input_dim,
-                                                 output_dim,
-                                                 dropout=dropout,
-                                                 alpha=alpha,
-                                                 activation=activation) for _ in range(nheads)]
+        self.attentions = [
+            SpGraphAttentionLayer(
+                input_dim,
+                output_dim,
+                dropout=dropout,
+                alpha=alpha,
+                activation=activation,
+            )
+            for _ in range(nheads)
+        ]
         self.concat = concat
         for i, attention in enumerate(self.attentions):
-            self.add_module('attention_{}'.format(i), attention)
+            self.add_module("attention_{}".format(i), attention)
 
     def forward(self, input):
         x, adj = input
@@ -138,7 +152,10 @@ class GraphAttentionLayer(nn.Module):
         if self.concat:
             h = torch.cat([att(x, adj) for att in self.attentions], dim=1)
         else:
-            h_cat = torch.cat([att(x, adj).view((-1, self.output_dim, 1)) for att in self.attentions], dim=2)
+            h_cat = torch.cat(
+                [att(x, adj).view((-1, self.output_dim, 1)) for att in self.attentions],
+                dim=2,
+            )
             h = torch.mean(h_cat, dim=2)
         h = F.dropout(h, self.dropout, training=self.training)
         return (h, adj)

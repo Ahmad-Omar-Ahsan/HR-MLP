@@ -28,7 +28,7 @@ class WarmUpLR(lr_scheduler._LRScheduler):
 
 
 def get_scheduler(
-    optimizer: optim.Optimizer, scheduler_type: str, T_max: int, max_lr : float = 1.0
+    optimizer: optim.Optimizer, scheduler_type: str, T_max: int, max_lr: float = 1.0
 ) -> lr_scheduler._LRScheduler:
     """Gets scheduler.
     Args:
@@ -36,7 +36,7 @@ def get_scheduler(
         scheduler_type (str): Specified scheduler.
         T_max (int):  Maximum number of iterations.
         max_lr(float) : Max learning rate. Optional
-        
+
     Raises:
         ValueError: Unsupported scheduler type.
     Returns:
@@ -45,8 +45,8 @@ def get_scheduler(
 
     if scheduler_type == "cosine_annealing":
         scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max, eta_min=1e-8)
-    elif scheduler_type == 'one_cycle_lr':
-        scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr,total_steps=T_max)
+    elif scheduler_type == "one_cycle_lr":
+        scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr, total_steps=T_max)
     else:
         raise ValueError(f"Unsupported scheduler type: {scheduler_type}")
 

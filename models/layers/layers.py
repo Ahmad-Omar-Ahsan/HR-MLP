@@ -20,7 +20,7 @@ def get_dim_act(args):
         act = getattr(F, args.act)
     acts = [act] * (args.num_layers - 1)
     dims = [args.feat_dim] + ([args.dim] * (args.num_layers - 1))
-    if args.task in ['lp', 'rec']:
+    if args.task in ["lp", "rec"]:
         dims += [args.dim]
         acts += [act]
     return dims, acts
@@ -51,9 +51,7 @@ class GraphConvolution(Module):
         return output
 
     def extra_repr(self):
-        return 'input_dim={}, output_dim={}'.format(
-                self.in_features, self.out_features
-        )
+        return "input_dim={}, output_dim={}".format(self.in_features, self.out_features)
 
 
 class Linear(Module):
@@ -83,6 +81,5 @@ class FermiDiracDecoder(Module):
         self.t = t
 
     def forward(self, dist):
-        probs = 1. / (torch.exp(((dist - self.r) / self.t).clamp_max(50.)) + 1.0)
+        probs = 1.0 / (torch.exp(((dist - self.r) / self.t).clamp_max(50.0)) + 1.0)
         return probs
-

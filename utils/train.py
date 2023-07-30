@@ -126,10 +126,20 @@ def train(
             ):
                 schedulers["warmup"].step()
 
-            elif schedulers["scheduler"] is not None and config["hparams"]["scheduler"]['scheduler_type']=='cosine_annealing':
-                if epoch >= config["hparams"]["scheduler"]['cosine_annealing']["start_epoch"]:
+            elif (
+                schedulers["scheduler"] is not None
+                and config["hparams"]["scheduler"]["scheduler_type"]
+                == "cosine_annealing"
+            ):
+                if (
+                    epoch
+                    >= config["hparams"]["scheduler"]["cosine_annealing"]["start_epoch"]
+                ):
                     schedulers["scheduler"].step()
-            elif schedulers["scheduler"] is not None and config["hparams"]["scheduler"]['scheduler_type']=='one_cycle_lr':
+            elif (
+                schedulers["scheduler"] is not None
+                and config["hparams"]["scheduler"]["scheduler_type"] == "one_cycle_lr"
+            ):
                 schedulers["scheduler"].step()
 
             running_loss += loss

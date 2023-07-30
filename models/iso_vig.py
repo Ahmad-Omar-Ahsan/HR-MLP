@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import math
@@ -9,6 +8,7 @@ import hyptorch.nn as hypnn
 from models.manifolds.lorentz import Lorentz
 import models.manifolds as manifolds
 from geoopt import ManifoldParameter
+
 
 def DropPath(x, drop_prob: float = 0.0, training: bool = False):
     if drop_prob == 0.0 or not training:
@@ -148,7 +148,6 @@ class Stem(nn.Module):
         return x
 
 
-
 class Lorentz_MLP_head(nn.Module):
     """
     MLP Decoder for Hyperbolic/Euclidean node classification models.
@@ -170,8 +169,8 @@ class Lorentz_MLP_head(nn.Module):
 
     def forward(self, x):
         return (2 + 2 * self.manifold.cinner(x, self.cls)) + self.bias
-    
-    
+
+
 class Isotropic_VIG(nn.Module):
     def __init__(
         self,
@@ -263,8 +262,7 @@ class Isotropic_VIG(nn.Module):
 
         x = F.adaptive_avg_pool2d(x, 1)
         return self.prediction(x).squeeze(-1).squeeze(-1)
-    
-    
+
 
 class Isotropic_VIG_Lorentz_head(nn.Module):
     def __init__(
@@ -314,7 +312,6 @@ class Isotropic_VIG_Lorentz_head(nn.Module):
             int(x.item()) for x in torch.linspace(k, k, self.n_blocks)
         ]  # number of knn's k
         max_dilation = 49 // max(num_knn)
-        
 
         self.backbone = nn.ModuleList([])
         idx = 0
@@ -340,13 +337,12 @@ class Isotropic_VIG_Lorentz_head(nn.Module):
         #     nn.Conv2d(1024, n_classes, 1, bias=True),
         # )
         self.lorentz_mlp_head = Lorentz_MLP_head(
-            dim=channels, n_classes=n_classes, bias=True, manifold='Lorentz'
+            dim=channels, n_classes=n_classes, bias=True, manifold="Lorentz"
         )
         self.l = Lorentz()
         self.to_euclid = self.l.logmap0
         self.to_lorentz = self.l.expmap0
         self.model_init()
-        
 
     def model_init(self):
         for m in self.modules():
@@ -365,8 +361,7 @@ class Isotropic_VIG_Lorentz_head(nn.Module):
 
         x = F.adaptive_avg_pool2d(x, 1)
         x = x.squeeze(-1).squeeze(-1)
-        
-        
+
         return self.lorentz_mlp_head(x)
 
 
@@ -459,8 +454,8 @@ class poincare_iso_VIG(nn.Module):
             c=c, train_x=train_x, train_c=train_c, ball_dim=ball_dim
         )
         self.mlr = hypnn.HyperbolicMLR(ball_dim=ball_dim, n_classes=10, c=c)
-        self.fc1 = nn.Linear(channels * (h // 4) * (w // 4), 1024)
-        self.hypl1 = hypnn.HypLinear(1024, ball_dim, c=c)
+        self.fc1 = nn.Linear(channels * (h // 4) * (w // 4), ball_dim)
+        self.hypl1 = hypnn.HypLinear(ball_dim, ball_dim, c=c)
 
     def model_init(self):
         for m in self.modules():
@@ -491,7 +486,7 @@ def count_parameters(model):
 
 
 if __name__ == "__main__":
-    model = Isotropic_VIG_Lorentz_head(
+    model = poincare_iso_VIG(
         k=9,
         act="gelu",
         conv="mr",
@@ -501,32 +496,41 @@ if __name__ == "__main__":
         dropout=0.0,
         n_classes=10,
         image_resolution=[32, 32],
-        
+        c=1,
+        ball_dim=256,
+        train_x=True,
+        train_c=True,
     )
-    ckpt = torch.load('/media/omar/Backup/projects/Fellowship/data/iso_vig_baseline/best.pth')
-    pretrained_dict = ckpt["model_state_dict"]
-    # model_dict = model.state_dict()
-    # # print(model_dict.keys())
-    # pretrained_dict = {k:v for k,v in pretrained_dict.items() if k in model_dict.keys()}
-    # model_dict.update(pretrained_dict)
-    
-    model.load_state_dict(pretrained_dict,strict=False)
-    for name, module in model.named_modules():
-        
-        if 'lorentz_mlp_head' in name:
-            # print(name)
-            # print(list(module.parameters()))
-            module.requires_grad_(requires_grad=True)
-            # print(list(module.parameters()))
-        else:
-            module.requires_grad_(requires_grad=False)
-            
-    for name, parameters in model.named_parameters():
-        if parameters.requires_grad == True:
-            print(name)
-    print(list(filter(lambda p: p.requires_grad==True, model.parameters())))
-    # image_tensor = torch.randn((3, 3, 32, 32))
-    # output_tensor = model(image_tensor)
-    # print(output_tensor.shape)
-    # print(output_tensor)
-    print(count_parameters(model))
+    image = torch.randn((3, 3, 32, 32))
+    output = model(image)
+    print(count_parameters(model=model))
+    print(output)
+    print(output.shape)
+
+    # ckpt = torch.load('/media/omar/Backup/projects/Fellowship/data/iso_vig_baseline/best.pth')
+    # pretrained_dict = ckpt["model_state_dict"]
+    # # model_dict = model.state_dict()
+    # # # print(model_dict.keys())
+    # # pretrained_dict = {k:v for k,v in pretrained_dict.items() if k in model_dict.keys()}
+    # # model_dict.update(pretrained_dict)
+
+    # model.load_state_dict(pretrained_dict,strict=False)
+    # for name, module in model.named_modules():
+
+    #     if 'lorentz_mlp_head' in name:
+    #         # print(name)
+    #         # print(list(module.parameters()))
+    #         module.requires_grad_(requires_grad=True)
+    #         # print(list(module.parameters()))
+    #     else:
+    #         module.requires_grad_(requires_grad=False)
+
+    # for name, parameters in model.named_parameters():
+    #     if parameters.requires_grad == True:
+    #         print(name)
+    # print(list(filter(lambda p: p.requires_grad==True, model.parameters())))
+    # # image_tensor = torch.randn((3, 3, 32, 32))
+    # # output_tensor = model(image_tensor)
+    # # print(output_tensor.shape)
+    # # print(output_tensor)
+    # print(count_parameters(model))

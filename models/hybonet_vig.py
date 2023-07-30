@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops.layers.torch import Rearrange
 from torch.nn import Sequential as Seq
-from models.gcn_lib.torch_vertex import  act_layer
+from models.gcn_lib.torch_vertex import act_layer
 from models.layers.hyp_layers import LorentzGraphConvolution, HyperbolicGraphConvolution
 
 
@@ -36,7 +36,15 @@ class Stem(nn.Module):
 
 
 class Hybovig_block(nn.Module):
-    def __init__(self, manifold, in_features, out_features, use_bias, dropout, use_att, local_agg, nonlin=None):
+    def __init__(
+        self,
+        manifold,
+        in_features,
+        out_features,
+        use_bias,
+        dropout,
+        use_att,
+        local_agg,
+        nonlin=None,
+    ):
         pass
-        
-
