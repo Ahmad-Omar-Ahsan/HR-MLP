@@ -3,7 +3,34 @@ import numpy as np
 from torch import nn
 from einops.layers.torch import Rearrange
 import hyptorch.nn as hypnn
+from models.gcn_lib.torch_vertex import act_layer
 
+
+class Stem(nn.Module):
+    """Image to Visual Embedding
+    Overlap: https://arxiv.org/pdf/2106.13797.pdf
+    """
+
+    def __init__(self, in_dim=3, out_dim=768, act="relu"):
+        super().__init__()
+        self.convs = nn.Sequential(
+            nn.Conv2d(in_dim, out_dim // 2, 3, stride=2, padding=1),
+            nn.BatchNorm2d(out_dim // 2),
+            act_layer(act),
+            nn.Conv2d(out_dim // 2, out_dim, 3, stride=2, padding=1),
+            nn.BatchNorm2d(out_dim),
+            act_layer(act),
+            nn.Conv2d(out_dim, out_dim, 3, stride=1, padding=1),
+            nn.BatchNorm2d(out_dim),
+        )
+        self.rearrange1 = Rearrange(
+            "b c h w -> b (h w) c",
+        )
+
+    def forward(self, x):
+        x = self.convs(x)
+        x = self.rearrange1(x)
+        return x
 
 class Aff(nn.Module):
     def __init__(self, dim):
@@ -139,7 +166,6 @@ class Poincare_ResMLP(nn.Module):
     def forward(self, x):
 
         x = self.to_patch_embedding(x)
-
         for mlp_block in self.mlp_blocks:
             x = mlp_block(x)
 
@@ -152,23 +178,54 @@ class Poincare_ResMLP(nn.Module):
         x = self.mlr(x)
 
         return x
+    
+class Lor_ResMLP_ablation(nn.Module):
+    def __init__(
+        self, in_channels, dim, num_classes, patch_size, image_size, depth, mlp_dim
+    ):
+        super().__init__()
+
+        assert (
+            image_size % patch_size == 0
+        ), "Image dimensions must be divisible by the patch size."
+        self.in_channels = in_channels
+        self.num_patch = (image_size // patch_size) ** 2
+        self.to_patch_embedding = Stem(in_dim=self.in_channels, out_dim=dim, act="gelu")
+
+        self.mlp_blocks = nn.ModuleList([])
+
+        for _ in range(depth):
+            self.mlp_blocks.append(MLPblock(dim, self.num_patch, mlp_dim))
+
+        self.affine = Aff(dim)
+
+        self.mlp_head = nn.Sequential(nn.Linear(dim, num_classes))
+
+    def forward(self, x):
+
+        x = self.to_patch_embedding(x)
+        for mlp_block in self.mlp_blocks:
+            x = mlp_block(x)
+
+        x = self.affine(x)
+
+        x = x.mean(dim=1)
+
+        return self.mlp_head(x)
+    
 
 
 if __name__ == "__main__":
     img = torch.ones([1, 3, 32, 32])
 
-    model = Poincare_ResMLP(
+    model = Lor_ResMLP_ablation(
         in_channels=3,
         image_size=32,
-        patch_size=8,
+        patch_size=4,
         num_classes=10,
-        dim=384,
+        dim=196,
         depth=12,
-        mlp_dim=384 * 4,
-        c=1.0,
-        ball_dim=2,
-        train_c=False,
-        train_x=False,
+        mlp_dim=196
     )
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())

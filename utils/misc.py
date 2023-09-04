@@ -17,7 +17,7 @@ from models.iso_vig import Isotropic_VIG, poincare_iso_VIG, Isotropic_VIG_Lorent
 from models.pyramid_vig import IVGN
 from models.Lorentz_resmlp import Lorentz_resmlp
 from models.Lorentz_ViT import Lorentz_ViT
-from models.Resmlp import ResMLP, Poincare_ResMLP
+from models.Resmlp import ResMLP, Poincare_ResMLP, Lor_ResMLP_ablation
 from models.ViT import ViT
 
 
@@ -97,6 +97,8 @@ def get_model(model_config: dict) -> nn.Module:
 
     if model_config["type"] == "ResNet_small":
         return ResNet_small(**model_config["ResNet_small"])
+    elif model_config['type'] == "Lor_ResMLP_ablation":
+        return Lor_ResMLP_ablation(**model_config["Lor_ResMLP_ablation"])
     elif model_config["type"] == "ViT":
         return ViT(**model_config["ViT"])
     elif model_config["type"] == "simple_cnn":
