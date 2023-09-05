@@ -6,6 +6,7 @@ import numpy as np
 import random
 import os
 import wandb
+from models.hugging_face_models import get_fastvit, get_efficientVIT_MIT
 from models.resnet import ResNet, ResNet_small
 from models.Simple_CNN import SimpleConvNet
 from models.MLP_mixer import MLPMixer
@@ -99,6 +100,10 @@ def get_model(model_config: dict) -> nn.Module:
         return ResNet_small(**model_config["ResNet_small"])
     elif model_config['type'] == "Lor_ResMLP_ablation":
         return Lor_ResMLP_ablation(**model_config["Lor_ResMLP_ablation"])
+    elif model_config['type'] == "fastVIT":
+        return get_fastvit(**model_config["fastVIT"])
+    elif model_config['type'] == 'efficientVIT':
+        return get_efficientVIT_MIT(**model_config["efficientVIT"])
     elif model_config["type"] == "ViT":
         return ViT(**model_config["ViT"])
     elif model_config["type"] == "simple_cnn":
