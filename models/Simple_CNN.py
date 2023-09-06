@@ -1,5 +1,7 @@
 import torch
 from torch import nn
+from fvcore.nn import FlopCountAnalysis
+import numpy as np
 
 
 class SimpleConvNet(nn.Module):
@@ -38,8 +40,11 @@ def count_parameters(model):
 
 
 if __name__ == "__main__":
-    image_tensor = torch.randn((3, 3, 32, 32))
-    mixer = SimpleConvNet(num_classes=100)
-    output = mixer(image_tensor)
-    print(output.shape)
-    print(count_parameters(mixer))
+    img = torch.randn((3, 3, 32, 32))
+    model = SimpleConvNet(num_classes=100)
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
+    parameters = sum([np.prod(p.size()) for p in parameters]) / 1_000_000
+    print("Trainable Parameters: %.3fM" % parameters)
+
+    flops = FlopCountAnalysis(model, img)
+    print(f"Number of flops: {flops.total()}")

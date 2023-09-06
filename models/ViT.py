@@ -3,7 +3,8 @@ from torch import nn
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
-
+from fvcore.nn import FlopCountAnalysis
+import numpy as np
 # helpers
 
 
@@ -175,8 +176,8 @@ def count_parameters(model):
 
 
 if __name__ == "__main__":
-    image_tensor = torch.randn((3, 3, 32, 32))
-    vit = ViT(
+    img = torch.randn((3, 3, 32, 32))
+    model = ViT(
         image_size=32,
         channels=3,
         patch_size=16,
@@ -186,6 +187,9 @@ if __name__ == "__main__":
         num_classes=10,
         mlp_dim=196,
     )
-    output = vit(image_tensor)
-    print(output.shape)
-    print(count_parameters(vit))
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
+    parameters = sum([np.prod(p.size()) for p in parameters]) / 1_000_000
+    print("Trainable Parameters: %.3fM" % parameters)
+
+    flops = FlopCountAnalysis(model, img)
+    print(f"Number of flops: {flops.total()}")

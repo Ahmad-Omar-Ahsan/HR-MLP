@@ -10,7 +10,8 @@ import models.manifolds as manifolds
 from einops.layers.torch import Rearrange
 from models.layers.hyp_layers import LorentzLinear
 from geoopt import ManifoldParameter
-
+from fvcore.nn import FlopCountAnalysis
+import numpy as np
 
 class Stem(nn.Module):
     """Image to Visual Embedding
@@ -230,15 +231,18 @@ def count_parameters(model):
 
 
 if __name__ == "__main__":
-    image_tensor = torch.randn((3, 3, 64, 64))
-    lorentz_resmlp = Lorentz_resmlp(
+    img = torch.randn((3, 3, 32, 32))
+    model = Lorentz_resmlp(
         in_dim=3,
         channels=196,
         act="gelu",
-        image_resolution=[64, 64],
+        image_resolution=[32, 32],
         patch_size=8,
         num_classes=10,
     )
-    output = lorentz_resmlp(image_tensor)
-    print(output.shape)
-    print(count_parameters(lorentz_resmlp))
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
+    parameters = sum([np.prod(p.size()) for p in parameters]) / 1_000_000
+    print("Trainable Parameters: %.3fM" % parameters)
+
+    flops = FlopCountAnalysis(model, img)
+    print(f"Number of flops: {flops.total()}")

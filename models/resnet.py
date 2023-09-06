@@ -1,6 +1,8 @@
 import torch
-import torch.nn.functional as F
+
 import torch.nn as nn
+from fvcore.nn import FlopCountAnalysis
+import numpy as np
 
 
 class block(nn.Module):
@@ -264,11 +266,17 @@ def test():
     BATCH_SIZE = 4
     device = torch.device("cpu")
     net = ResNet_small(in_channels=3, num_classes=10).to(device)
-    y = net(torch.randn(BATCH_SIZE, 3, 224, 224)).to(device)
+    y = net(torch.randn(BATCH_SIZE, 3, 32, 32)).to(device)
     assert y.size() == torch.Size([BATCH_SIZE, 10])
     print(y.size())
     print(net)
     print(count_parameters(net))
+    parameters = filter(lambda p: p.requires_grad, net.parameters())
+    parameters = sum([np.prod(p.size()) for p in parameters]) / 1_000_000
+    print("Trainable Parameters: %.3fM" % parameters)
+
+    flops = FlopCountAnalysis(net, torch.randn(BATCH_SIZE, 3, 32, 32))
+    print(f"Number of flops: {flops.total()}")
 
 
 if __name__ == "__main__":

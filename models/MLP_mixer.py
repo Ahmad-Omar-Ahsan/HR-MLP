@@ -2,6 +2,8 @@ import torch
 from torch import nn
 from functools import partial
 from einops.layers.torch import Rearrange, Reduce
+from fvcore.nn import FlopCountAnalysis
+import numpy as np
 
 pair = lambda x: x if isinstance(x, tuple) else (x, x)
 
@@ -73,8 +75,8 @@ def count_parameters(model):
 
 
 if __name__ == "__main__":
-    image_tensor = torch.randn((3, 3, 32, 32))
-    mixer = MLPMixer(
+    img = torch.randn((3, 3, 32, 32))
+    model = MLPMixer(
         image_size=(32, 32),
         channels=3,
         patch_size=16,
@@ -82,6 +84,10 @@ if __name__ == "__main__":
         depth=12,
         num_classes=10,
     )
-    output = mixer(image_tensor)
-    print(output.shape)
-    print(count_parameters(mixer))
+    
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
+    parameters = sum([np.prod(p.size()) for p in parameters]) / 1_000_000
+    print("Trainable Parameters: %.3fM" % parameters)
+
+    flops = FlopCountAnalysis(model, img)
+    print(f"Number of flops: {flops.total()}")
